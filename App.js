@@ -7,10 +7,10 @@ import SignupScreen from './src/components/SignupScreen';
 import ChatScreen from './src/components/ChatScreen';
 
 // 실제 백엔드 서버 주소를 입력하세요.
-const BASE_URL = 'https://api.histolog.com';
+const BASE_URL = 'https://histolog.app';
 
 export default function App() {
-  const [screen, setScreen] = useState('chat'); // 'login', 'signup', 'chat'
+  const [screen, setScreen] = useState('login'); // 'login', 'signup', 'chat'
   const [token, setToken] = useState(''); // 로그인 후 받은 access_token 저장
 
   // 로그인 성공 시 호출
