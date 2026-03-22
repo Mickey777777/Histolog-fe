@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
-import { AntDesign } from '@expo/vector-icons'
+import { AntDesign, Ionicons } from '@expo/vector-icons'
 
 const LoginScreen = ({ onLoginSuccess, onGoToSignup, baseUrl }) => {
     const [username, setUsername] = useState('');
@@ -35,35 +35,39 @@ const LoginScreen = ({ onLoginSuccess, onGoToSignup, baseUrl }) => {
     };
 
     const handleGoogleLogin = async () => {
-            try {
-                const appRedirect = Linking.createURL('google-auth');
-                const authUrl = `${baseUrl}/api/auth/google/initiate?appRedirect=${encodeURIComponent(appRedirect)}`;
-    
-                if (Platform.OS === 'web') {
-                    window.location.assign(authUrl);
-                    return;
-                }
-    
-                const result = await WebBrowser.openAuthSessionAsync(
-                    authUrl,
-                    appRedirect
-                );
-    
-                if (result.type === 'success') {
-                    const tokenMatch = result.url.match(/[?&]token=([^&]+)/);
-                    if (tokenMatch) {
-                        onLoginSuccess(decodeURIComponent(tokenMatch[1]));
-                    } else {
-                        Alert.alert('로그인 실패', '토큰을 받지 못했습니다. 다시 시도해주세요.');
-                    }
-                } else if (result.type !== 'cancel') {
-                    Alert.alert('로그인 실패', '구글 로그인 창을 열지 못했습니다. 다시 시도해주세요.');
-                }
-            } catch (err) {
-                console.error('Google login error:', err);
-                Alert.alert('에러', '구글 로그인 창을 여는 중 문제가 발생했습니다.');
+        try {
+            const appRedirect = Linking.createURL('google-auth');
+            const authUrl = `${baseUrl}/api/auth/google/initiate?appRedirect=${encodeURIComponent(appRedirect)}`;
+
+            if (Platform.OS === 'web') {
+                window.location.assign(authUrl);
+                return;
             }
-        };
+
+            const result = await WebBrowser.openAuthSessionAsync(
+                authUrl,
+                appRedirect
+            );
+
+            if (result.type === 'success') {
+                const tokenMatch = result.url.match(/[?&]token=([^&]+)/);
+                if (tokenMatch) {
+                    onLoginSuccess(decodeURIComponent(tokenMatch[1]));
+                } else {
+                    Alert.alert('로그인 실패', '토큰을 받지 못했습니다. 다시 시도해주세요.');
+                }
+            } else if (result.type !== 'cancel') {
+                Alert.alert('로그인 실패', '구글 로그인 창을 열지 못했습니다. 다시 시도해주세요.');
+            }
+        } catch (err) {
+            console.error('Google login error:', err);
+            Alert.alert('에러', '구글 로그인 창을 여는 중 문제가 발생했습니다.');
+        }
+    };
+
+    const handleKakaoLogin = async () => {
+
+    };
 
     return (
         <View style={styles.container}>
@@ -95,10 +99,17 @@ const LoginScreen = ({ onLoginSuccess, onGoToSignup, baseUrl }) => {
                 <View style={styles.dividerLine} />
             </View>
 
-            <TouchableOpacity style={styles.googleButton} onPress={handleGoogleLogin}>
-                <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                    <AntDesign name="google" size={20} color="#5D4037"></AntDesign>
-                    <Text style={styles.googleButtonText}>  Google로 로그인</Text>    
+            <TouchableOpacity style={styles.socialLoginButton} onPress={handleGoogleLogin}>
+                <View style={styles.socialLoginRow}>
+                    <AntDesign name="google" size={20} color="#5D4037" style={styles.socialLoginIcon} />
+                    <Text style={styles.socialLoginButtonText}>Google로 로그인</Text>
+                </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.socialLoginButton} onPress={handleKakaoLogin}>
+                <View style={styles.socialLoginRow}>
+                    <Ionicons name="chatbubble" size={20} color="#3C1E1E" style={styles.socialLoginIcon} />
+                    <Text style={styles.socialLoginButtonText}>Kakao로 로그인</Text>
                 </View>
             </TouchableOpacity>
 
@@ -119,8 +130,10 @@ const styles = StyleSheet.create({
     dividerContainer: { flexDirection: 'row', alignItems: 'center', marginVertical: 20 },
     dividerLine: { flex: 1, height: 1, backgroundColor: '#DDD' },
     dividerText: { marginHorizontal: 10, color: '#8D6E63', fontSize: 13 },
-    googleButton: { backgroundColor: '#fff', padding: 15, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#DDD' },
-    googleButtonText: { color: '#5D4037', fontWeight: 'bold', fontSize: 16 },
+    socialLoginButton: { backgroundColor: '#fff', padding: 15, marginBottom: 12, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#DDD' },
+    socialLoginRow: { flexDirection: 'row', alignItems: 'center' },
+    socialLoginIcon: { marginRight: 8 },
+    socialLoginButtonText: { color: '#5D4037', fontWeight: 'bold', fontSize: 16 },
     linkText: { color: '#5D4037', textAlign: 'center', marginTop: 25, fontWeight: '500' }
 });
 
