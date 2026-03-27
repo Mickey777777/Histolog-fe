@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
-import { AntDesign, Ionicons } from '@expo/vector-icons'
+import { AntDesign } from '@expo/vector-icons'
 
 const LoginScreen = ({ onLoginSuccess, onGoToSignup, baseUrl }) => {
     const [username, setUsername] = useState('');
@@ -65,8 +65,27 @@ const LoginScreen = ({ onLoginSuccess, onGoToSignup, baseUrl }) => {
         }
     };
 
-    const handleKakaoLogin = async () => {
+    const handleNaverLogin = async () => {
+        try {
+            const appRedirect = Linking.createURL('naver-auth');
+            const authUrl = `${baseUrl}/api/auth/naver/initiate?appRedirect=${encodeURIComponent(appRedirect)}`;
 
+            if (Platform.OS === 'web') {
+                window.location.assign(authUrl);
+                return;
+            }
+
+            const result = await WebBrowser.openAuthSessionAsync(authUrl, appRedirect);
+    
+            if (result.type === 'success') {
+                const tokenMatch = result.url.match(/[?&]token=([^&]+)/);
+                if (tokenMatch) onLoginSuccess(decodeURIComponent(tokenMatch[1]));
+            }
+
+        } catch (err) {
+            console.error('Naver login error: ', err);
+            Alert.alert('에러', '네이버 로그인 창을 여는 중 문제가 발생했습니다.');
+        }
     };
 
     return (
@@ -101,15 +120,23 @@ const LoginScreen = ({ onLoginSuccess, onGoToSignup, baseUrl }) => {
 
             <TouchableOpacity style={styles.socialLoginButton} onPress={handleGoogleLogin}>
                 <View style={styles.socialLoginRow}>
-                    <AntDesign name="google" size={20} color="#5D4037" style={styles.socialLoginIcon} />
+                    <View style={styles.socialLogoSlot}>
+                        <View style={styles.socialLogoFrame}>
+                            <AntDesign name="google" size={18} color="#5D4037" />
+                        </View>
+                    </View>
                     <Text style={styles.socialLoginButtonText}>Google로 로그인</Text>
                 </View>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.socialLoginButton} onPress={handleKakaoLogin}>
+            <TouchableOpacity style={styles.socialLoginButton} onPress={handleNaverLogin}>
                 <View style={styles.socialLoginRow}>
-                    <Ionicons name="chatbubble" size={20} color="#3C1E1E" style={styles.socialLoginIcon} />
-                    <Text style={styles.socialLoginButtonText}>Kakao로 로그인</Text>
+                    <View style={styles.socialLogoSlot}>
+                        <View style={styles.naverLogoBadge}>
+                            <Text style={styles.naverLogoText}>N</Text>
+                        </View>
+                    </View>
+                    <Text style={styles.socialLoginButtonText}>Naver로 로그인</Text>
                 </View>
             </TouchableOpacity>
 
@@ -132,8 +159,11 @@ const styles = StyleSheet.create({
     dividerText: { marginHorizontal: 10, color: '#8D6E63', fontSize: 13 },
     socialLoginButton: { backgroundColor: '#fff', padding: 15, marginBottom: 12, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#DDD' },
     socialLoginRow: { flexDirection: 'row', alignItems: 'center' },
-    socialLoginIcon: { marginRight: 8 },
+    socialLogoSlot: { width: 28, alignItems: 'center', justifyContent: 'center', marginRight: 8 },
+    socialLogoFrame: { width: 22, height: 22, alignItems: 'center', justifyContent: 'center' },
     socialLoginButtonText: { color: '#5D4037', fontWeight: 'bold', fontSize: 16 },
+    naverLogoBadge: { width: 22, height: 22, borderRadius: 4, backgroundColor: '#03C75A', alignItems: 'center', justifyContent: 'center' },
+    naverLogoText: { color: '#fff', fontWeight: '900', fontSize: 15 },
     linkText: { color: '#5D4037', textAlign: 'center', marginTop: 25, fontWeight: '500' }
 });
 
