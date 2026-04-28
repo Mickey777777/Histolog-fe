@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
 
-const Sidebar = ({ sessions, onNewChat, onSessionPress }) => {
+const Sidebar = ({ sessions, onNewChat, onSessionPress, onLogout }) => {
     return (
         <View style={styles.sidebarInner}>
             <View style={styles.sidebarHeader}>
@@ -13,7 +13,6 @@ const Sidebar = ({ sessions, onNewChat, onSessionPress }) => {
 
             <FlatList
                 data={sessions}
-                // 명세서의 고유 값인 session_id를 키로 사용합니다.
                 keyExtractor={(item) => item.session_id ? item.session_id.toString() : Math.random().toString()}
                 renderItem={({ item }) => (
                     <TouchableOpacity
@@ -28,6 +27,10 @@ const Sidebar = ({ sessions, onNewChat, onSessionPress }) => {
                 )}
                 ListEmptyComponent={<Text style={styles.emptyText}>진행 중인 대화가 없습니다.</Text>}
             />
+
+            <TouchableOpacity style={styles.logoutBtn} onPress={onLogout}>
+                <Text style={styles.logoutText}>로그아웃</Text>
+            </TouchableOpacity>
         </View>
     );
 };
@@ -41,7 +44,9 @@ const styles = StyleSheet.create({
     sessionItem: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#EEE' },
     sessionTitle: { fontSize: 14, color: '#444', fontWeight: '500' },
     sessionDate: { fontSize: 10, color: '#999', marginTop: 4 },
-    emptyText: { textAlign: 'center', marginTop: 20, color: '#999', fontSize: 13 }
+    emptyText: { textAlign: 'center', marginTop: 20, color: '#999', fontSize: 13 },
+    logoutBtn: { marginTop: 20, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#D32F2F', alignItems: 'center' },
+    logoutText: { color: '#D32F2F', fontWeight: '600' },
 });
 
 export default Sidebar;

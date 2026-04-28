@@ -11,8 +11,11 @@ const ChatInput = ({ value, onChangeText, onSend, disabled }) => {
                     onChangeText={onChangeText}
                     placeholder="역사학자에게 질문을 던져보세요..."
                     placeholderTextColor="#999"
-                    multiline // 여러 줄 입력 가능
+                    multiline
                     maxLength={1000}
+                    blurOnSubmit={true}
+                    onSubmitEditing={onSend}
+                    returnKeyType="send"
                 />
                 <TouchableOpacity
                     style={[styles.sendButton, (!value || disabled) && styles.disabledBtn]}
