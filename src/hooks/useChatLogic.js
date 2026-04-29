@@ -24,7 +24,6 @@ export const useChatLogic = (baseUrl, session) => {
 
     // 2. 새 대화 시작 (이 함수가 정의되어 있어야 합니다!)
     const startNewChat = async () => {
-        console.log('startNewChat session:', session);
         setLoading(true);
         try {
             const res = await fetch(`${baseUrl}/api/chats`, {
