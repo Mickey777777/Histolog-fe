@@ -5,12 +5,13 @@
     "scheme": "histolog",
     "version": "1.0.0",
     "android": {
-      "package": "com.anonymous.histolog"
+      "package": "com.histolog.app"
     },
     "extra": {
       "eas": {
-        "projectId": "e24d32b2-6c86-4b49-a29c-53cedc6d1421"
+        "projectId": "877918e7-5f45-4233-ab94-a461304cc8e5"
       }
-    }
+    },
+    "owner": "mickey7777777"
   }
 }
