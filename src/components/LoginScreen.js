@@ -36,7 +36,7 @@ const LoginScreen = ({ onLoginSuccess, onGoToSignup, baseUrl }) => {
 
             if (res.ok) {
                 // 성공 시 상위 App.js로 토큰을 전달합니다.
-                onLoginSuccess(data.access_token);
+                onLoginSuccess(data.access_token, data.refresh_token);
             }else{
                 showPopup("로그인 실패", data.message || "아이디 또는 비밀번호를 확인하세요.");
             }
@@ -62,8 +62,12 @@ const LoginScreen = ({ onLoginSuccess, onGoToSignup, baseUrl }) => {
 
             if (result.type === 'success') {
                 const tokenMatch = result.url.match(/[?&]token=([^&]+)/);
+                const refreshMatch = result.url.match(/[?&]refresh_token=([^&]+)/);
                 if (tokenMatch) {
-                    onLoginSuccess(decodeURIComponent(tokenMatch[1]));
+                    onLoginSuccess(
+                        decodeURIComponent(tokenMatch[1]),
+                        refreshMatch ? decodeURIComponent(refreshMatch[1]) : null
+                    );
                 } else {
                     showPopup("로그인 실패", "토큰을 받지 못했습니다. 다시 시도해주세요.");
                 }
@@ -90,7 +94,13 @@ const LoginScreen = ({ onLoginSuccess, onGoToSignup, baseUrl }) => {
     
             if (result.type === 'success') {
                 const tokenMatch = result.url.match(/[?&]token=([^&]+)/);
-                if (tokenMatch) onLoginSuccess(decodeURIComponent(tokenMatch[1]));
+                const refreshMatch = result.url.match(/[?&]refresh_token=([^&]+)/);
+                if (tokenMatch) {
+                    onLoginSuccess(
+                        decodeURIComponent(tokenMatch[1]),
+                        refreshMatch ? decodeURIComponent(refreshMatch[1]) : null
+                    );
+                }
             }
 
         } catch (err) {
