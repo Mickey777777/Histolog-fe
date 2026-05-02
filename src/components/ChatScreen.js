@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-    View, Text, FlatList, StyleSheet, SafeAreaView, Animated,
+    View, Text, FlatList, StyleSheet, Animated,
     Dimensions, PanResponder, KeyboardAvoidingView, Platform, TouchableOpacity, Modal
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const TypingIndicator = () => {
     const dots = [useRef(new Animated.Value(0)).current, useRef(new Animated.Value(0)).current, useRef(new Animated.Value(0)).current];
