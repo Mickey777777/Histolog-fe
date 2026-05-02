@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { authFetch } from '../utils/authFetch';
 
 export const useChatLogic = (baseUrl, session) => {
     const [messages, setMessages] = useState([]);
@@ -12,9 +13,7 @@ export const useChatLogic = (baseUrl, session) => {
     // 1. 대화 목록 가져오기
     const fetchSessions = async () => {
         try {
-            const res = await fetch(`${baseUrl}/api/chats`, {
-                headers: { 'Authorization': `Bearer ${session}` }
-            });
+            const res = await authFetch(`${baseUrl}/api/chats`);
             const data = await res.json();
             if (res.ok) setSessions(data.chats || []);
         } catch (err) {
@@ -26,10 +25,7 @@ export const useChatLogic = (baseUrl, session) => {
     const startNewChat = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`${baseUrl}/api/chats`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${session}` }
-            });
+            const res = await authFetch(`${baseUrl}/api/chats`, { method: 'POST' });
             const data = await res.json();
             if (res.ok) {
                 setSessionId(data.chat_id);
@@ -50,12 +46,9 @@ export const useChatLogic = (baseUrl, session) => {
         setLoading(true);
 
         try {
-            const res = await fetch(`${baseUrl}/api/chats/${sessionId}/messages`, {
+            const res = await authFetch(`${baseUrl}/api/chats/${sessionId}/messages`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session}`
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message })
             });
             const data = await res.json();
@@ -78,9 +71,7 @@ export const useChatLogic = (baseUrl, session) => {
     const loadChat = async (chatId) => {
         setLoading(true);
         try {
-            const res = await fetch(`${baseUrl}/api/chats/${chatId}/messages`, {
-                headers: { 'Authorization': `Bearer ${session}` }
-            });
+            const res = await authFetch(`${baseUrl}/api/chats/${chatId}/messages`);
             const data = await res.json();
             if (res.ok) {
                 setSessionId(chatId);
