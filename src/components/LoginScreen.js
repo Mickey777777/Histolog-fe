@@ -117,6 +117,7 @@ const LoginScreen = ({ onLoginSuccess, onGoToSignup, baseUrl }) => {
             <TextInput
                 style={styles.input}
                 placeholder="사용자 이름(Username)"
+                placeholderTextColor="#9E9E9E"
                 value={username}
                 onChangeText={setUsername}
                 autoCapitalize="none"
@@ -124,6 +125,7 @@ const LoginScreen = ({ onLoginSuccess, onGoToSignup, baseUrl }) => {
             <TextInput
                 style={styles.input}
                 placeholder="비밀번호(Password)"
+                placeholderTextColor="#9E9E9E"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
