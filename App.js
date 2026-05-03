@@ -67,7 +67,7 @@ export default function App() {
       refreshToken ? decodeURIComponent(refreshToken) : null
     );
 
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && window.history) {
       window.history.replaceState({}, document.title, '/');
     }
   }, [url]);
