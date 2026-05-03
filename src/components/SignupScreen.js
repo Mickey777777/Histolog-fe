@@ -47,9 +47,9 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin, baseUrl }) => {
             <Text style={styles.title}>회원가입</Text>
             <Text style={styles.subtitle}>히스톨로그의 새로운 가족이 되어주세요</Text>
 
-            <TextInput style={styles.input} placeholder="사용자 이름" value={username} onChangeText={setUsername} />
-            <TextInput style={styles.input} placeholder="이메일 주소" value={email} onChangeText={setEmail} keyboardType="email-address" />
-            <TextInput style={styles.input} placeholder="비밀번호" value={password} onChangeText={setPassword} secureTextEntry />
+            <TextInput style={styles.input} placeholder="사용자 이름" placeholderTextColor="#9E9E9E" value={username} onChangeText={setUsername} />
+            <TextInput style={styles.input} placeholder="이메일 주소" placeholderTextColor="#9E9E9E" value={email} onChangeText={setEmail} keyboardType="email-address" />
+            <TextInput style={styles.input} placeholder="비밀번호" placeholderTextColor="#9E9E9E" value={password} onChangeText={setPassword} secureTextEntry />
 
             <TouchableOpacity style={styles.button} onPress={handleSignup}>
                 <Text style={styles.buttonText}>가입 완료</Text>

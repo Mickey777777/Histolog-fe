@@ -12,6 +12,9 @@
         "projectId": "877918e7-5f45-4233-ab94-a461304cc8e5"
       }
     },
-    "owner": "mickey7777777"
+    "owner": "mickey7777777",
+    "plugins": [
+      "expo-web-browser"
+    ]
   }
 }
