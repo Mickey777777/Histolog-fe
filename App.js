@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import * as Linking from 'expo-linking';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setTokens, setLogoutCallback } from './src/utils/authFetch';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // src/components 폴더에 저장될 화면들을 불러옵니다.
 import LoginScreen from './src/components/LoginScreen';
@@ -71,31 +72,29 @@ export default function App() {
     }
   }, [url]);
 
-  if (screen === 'signup') {
-    return (
-      <SignupScreen
-        baseUrl={BASE_URL}
-        onSignupSuccess={() => setScreen('login')}
-        onBackToLogin={() => setScreen('login')}
-      />
-    );
-  }
-
-  if (screen === 'chat') {
-    return (
-      <ChatScreen
-        baseUrl={BASE_URL}
-        token={token}
-        onLogout={handleLogout}
-      />
-    );
-  }
-
   return (
-    <LoginScreen
-      baseUrl={BASE_URL}
-      onLoginSuccess={handleLoginSuccess}
-      onGoToSignup={() => setScreen('signup')}
-    />
+    <SafeAreaProvider>
+      {screen === 'signup' && (
+        <SignupScreen
+          baseUrl={BASE_URL}
+          onSignupSuccess={() => setScreen('login')}
+          onBackToLogin={() => setScreen('login')}
+        />
+      )}
+      {screen === 'chat' && (
+        <ChatScreen
+          baseUrl={BASE_URL}
+          token={token}
+          onLogout={handleLogout}
+        />
+      )}
+      {screen === 'login' && (
+        <LoginScreen
+          baseUrl={BASE_URL}
+          onLoginSuccess={handleLoginSuccess}
+          onGoToSignup={() => setScreen('signup')}
+        />
+      )}
+    </SafeAreaProvider>
   );
 }
