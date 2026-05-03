@@ -1,23 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet, Platform, Keyboard } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import React from 'react';
+import { View, TextInput, TouchableOpacity, Text, StyleSheet } from 'react-native';
 
 const ChatInput = ({ value, onChangeText, onSend, disabled }) => {
-    const insets = useSafeAreaInsets();
-    const [keyboardVisible, setKeyboardVisible] = useState(false);
-
-    useEffect(() => {
-        if (Platform.OS !== 'ios') return;
-        const show = Keyboard.addListener('keyboardWillShow', () => setKeyboardVisible(true));
-        const hide = Keyboard.addListener('keyboardWillHide', () => setKeyboardVisible(false));
-        return () => { show.remove(); hide.remove(); };
-    }, []);
-
-    const bottomPadding = Platform.OS === 'ios'
-        ? (keyboardVisible ? 16 : 16 + insets.bottom)
-        : 16;
     return (
-        <View style={[styles.inputWrapper, { paddingBottom: bottomPadding }]}>
+        <View style={styles.inputWrapper}>
             <View style={styles.inputCard}>
                 <TextInput
                     style={styles.textInput}
