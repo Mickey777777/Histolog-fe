@@ -88,5 +88,5 @@ export const useChatLogic = (baseUrl, session) => {
     };
 
     // 마지막에 이 함수들을 모두 내보내야 ChatScreen에서 쓸 수 있습니다.
-    return { messages, sessions, loading, error, clearError, startNewChat, sendMessage, fetchSessions, loadChat };
+    return { messages, sessions, sessionId, loading, error, clearError, startNewChat, sendMessage, fetchSessions, loadChat };
 };
