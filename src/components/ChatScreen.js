@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
     View, Text, FlatList, StyleSheet, Animated,
-    Dimensions, PanResponder, KeyboardAvoidingView, Platform, TouchableOpacity, Modal
+    Dimensions, PanResponder, KeyboardAvoidingView, Platform, TouchableOpacity, Modal, Keyboard
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -37,9 +37,9 @@ const TypingIndicator = () => {
 
 const typingStyles = StyleSheet.create({
     row: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 28 },
-    avatar: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#F3F3F3', justifyContent: 'center', alignItems: 'center', marginRight: 8 },
+    avatar: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#F0EBE3', justifyContent: 'center', alignItems: 'center', marginRight: 8 },
     avatarText: { fontSize: 16, fontWeight: 'bold', color: '#5D4037' },
-    bubble: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F3F3', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, gap: 4 },
+    bubble: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0EBE3', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, gap: 4 },
     dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#5D4037' },
 });
 
@@ -51,7 +51,6 @@ import { useChatLogic } from '../hooks/useChatLogic';
 const { width } = Dimensions.get('window');
 const SIDEBAR_WIDTH = width * 0.75;
 
-// 1. 초기 소개 화면 컴포넌트
 const IntroView = () => (
     <View style={styles.introContainer}>
         <View style={styles.logoBadge}>
@@ -72,16 +71,34 @@ const IntroView = () => (
 );
 
 export default function ChatScreen({ baseUrl, token, onLogout }) {
-    const { messages, sessions, loading, error, clearError, startNewChat, sendMessage, loadChat } = useChatLogic(baseUrl, token);
+    const { messages, sessions, sessionId, loading, error, clearError, startNewChat, sendMessage, loadChat } = useChatLogic(baseUrl, token);
     const [inputText, setInputText] = useState('');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const isSidebarOpenRef = useRef(false);
     const slideAnim = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
+
+    const openSidebar = () => {
+        Keyboard.dismiss();
+        Animated.timing(slideAnim, { toValue: 0, duration: 250, useNativeDriver: true }).start();
+        isSidebarOpenRef.current = true;
+        setIsSidebarOpen(true);
+    };
+
+    const closeSidebar = () => {
+        Animated.timing(slideAnim, { toValue: -SIDEBAR_WIDTH, duration: 250, useNativeDriver: true }).start();
+        isSidebarOpenRef.current = false;
+        setIsSidebarOpen(false);
+    };
 
     const panResponder = useRef(
         PanResponder.create({
-            onStartShouldSetPanResponder: (_, gesture) => !isSidebarOpen && gesture.x0 < 40,
+            onMoveShouldSetPanResponder: (_, gesture) =>
+                !isSidebarOpenRef.current &&
+                gesture.x0 < 40 &&
+                gesture.dx > 0 &&
+                Math.abs(gesture.dx) > Math.abs(gesture.dy),
             onPanResponderMove: (_, gesture) => {
-                let val = isSidebarOpen ? gesture.dx : -SIDEBAR_WIDTH + gesture.dx;
+                const val = -SIDEBAR_WIDTH + gesture.dx;
                 if (val <= 0 && val >= -SIDEBAR_WIDTH) slideAnim.setValue(val);
             },
             onPanResponderRelease: (_, gesture) => {
@@ -91,16 +108,6 @@ export default function ChatScreen({ baseUrl, token, onLogout }) {
         })
     ).current;
 
-    const openSidebar = () => {
-        Animated.timing(slideAnim, { toValue: 0, duration: 250, useNativeDriver: true }).start();
-        setIsSidebarOpen(true);
-    };
-
-    const closeSidebar = () => {
-        Animated.timing(slideAnim, { toValue: -SIDEBAR_WIDTH, duration: 250, useNativeDriver: true }).start();
-        setIsSidebarOpen(false);
-    };
-
     const handleSend = () => {
         if (!inputText.trim()) return;
         sendMessage(inputText);
@@ -108,8 +115,11 @@ export default function ChatScreen({ baseUrl, token, onLogout }) {
     };
 
     return (
-        <SafeAreaView style={styles.container} {...panResponder.panHandlers}>
-            <Animated.View style={[styles.sidebarContainer, { transform: [{ translateX: slideAnim }] }]}>
+        <SafeAreaView style={styles.container} edges={['top', 'left', 'right']} {...panResponder.panHandlers}>
+            <Animated.View
+                style={[styles.sidebarContainer, { transform: [{ translateX: slideAnim }] }]}
+                pointerEvents={isSidebarOpen ? 'auto' : 'none'}
+            >
                 <Sidebar
                     sessions={sessions}
                     onNewChat={() => { startNewChat(); closeSidebar(); }}
@@ -118,7 +128,10 @@ export default function ChatScreen({ baseUrl, token, onLogout }) {
                 />
             </Animated.View>
 
-            <View style={styles.main}>
+            <KeyboardAvoidingView
+                style={styles.main}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            >
                 <View style={styles.header}>
                     <TouchableOpacity onPress={openSidebar} style={styles.menuButton}>
                         <Text style={styles.menuIcon}>☰</Text>
@@ -127,28 +140,27 @@ export default function ChatScreen({ baseUrl, token, onLogout }) {
                     <View style={{ width: 40 }} />
                 </View>
 
-                {/* 2. 조건부 렌더링: 메시지가 있으면 리스트를, 없으면 소개 화면을 보여줍니다. */}
                 {messages.length > 0 ? (
                     <FlatList
+                        key={sessionId}
                         data={messages}
                         keyExtractor={(_, i) => i.toString()}
                         renderItem={({ item }) => <MessageItem role={item.role} content={item.message} />}
                         contentContainerStyle={styles.chatList}
                         ListFooterComponent={loading ? <TypingIndicator /> : null}
+                        keyboardShouldPersistTaps="handled"
                     />
                 ) : (
                     <IntroView />
                 )}
 
-                <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : null}>
-                    <ChatInput
-                        value={inputText}
-                        onChangeText={setInputText}
-                        onSend={handleSend}
-                        disabled={loading}
-                    />
-                </KeyboardAvoidingView>
-            </View>
+                <ChatInput
+                    value={inputText}
+                    onChangeText={setInputText}
+                    onSend={handleSend}
+                    disabled={loading}
+                />
+            </KeyboardAvoidingView>
 
             {isSidebarOpen && <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={closeSidebar} />}
 
@@ -168,47 +180,46 @@ export default function ChatScreen({ baseUrl, token, onLogout }) {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#FFFFFF' },
-    sidebarContainer: { position: 'absolute', left: 0, width: SIDEBAR_WIDTH, height: '100%', zIndex: 10 },
+    container: { flex: 1, backgroundColor: '#FAFAF8' },
+    sidebarContainer: { position: 'absolute', left: 0, top: 0, bottom: 0, width: SIDEBAR_WIDTH, zIndex: 10 },
     main: { flex: 1 },
-    header: { height: 60, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderColor: '#F0F0F0' },
+    header: { height: 60, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderColor: '#EDE0D4' },
     menuButton: { paddingLeft: 15, paddingRight: 10 },
-    menuIcon: { fontSize: 24, color: '#333' },
-    headerTitle: { fontSize: 18, fontWeight: '600', color: '#1A1A1A' },
+    menuIcon: { fontSize: 24, color: '#5D4037' },
+    headerTitle: { fontSize: 18, fontWeight: '600', color: '#3E2723' },
     chatList: { padding: 20 },
     overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.3)', zIndex: 5 },
 
-    // --- 소개 화면 스타일 ---
     introContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 40,
+        overflow: 'hidden',
     },
     logoBadge: {
         width: 60,
         height: 60,
         borderRadius: 15,
-        backgroundColor: '#F3F3F3',
+        backgroundColor: '#F0EBE3',
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 20,
     },
     logoBadgeText: { fontSize: 30, fontWeight: 'bold', color: '#5D4037' },
-    introTitle: { fontSize: 20, fontWeight: 'bold', color: '#1A1A1A', marginBottom: 12, textAlign: 'center' },
-    introDescription: { fontSize: 15, color: '#666', textAlign: 'center', lineHeight: 22, marginBottom: 40 },
+    introTitle: { fontSize: 20, fontWeight: 'bold', color: '#3E2723', marginBottom: 12, textAlign: 'center' },
+    introDescription: { fontSize: 15, color: '#8D6E63', textAlign: 'center', lineHeight: 22, marginBottom: 40 },
     tipContainer: {
         width: '100%',
-        backgroundColor: '#F9F9F9',
+        backgroundColor: '#F0EBE3',
         padding: 20,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: '#EEE',
+        borderColor: '#E8DDD5',
     },
     tipTitle: { fontSize: 14, fontWeight: '700', color: '#5D4037', marginBottom: 10 },
-    tipText: { fontSize: 13, color: '#777', marginBottom: 8, lineHeight: 18 },
+    tipText: { fontSize: 13, color: '#8D6E63', marginBottom: 8, lineHeight: 18 },
 
-    // --- 오류 모달 스타일 ---
     modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
     modalBox: { width: '80%', backgroundColor: '#FFF', borderRadius: 16, padding: 24, alignItems: 'center' },
     modalTitle: { fontSize: 16, fontWeight: '700', color: '#1A1A1A', marginBottom: 10 },
