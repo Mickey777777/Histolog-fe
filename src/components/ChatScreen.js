@@ -115,7 +115,7 @@ export default function ChatScreen({ baseUrl, token, onLogout }) {
     };
 
     return (
-        <SafeAreaView style={styles.container} edges={['top', 'left', 'right']} {...panResponder.panHandlers}>
+        <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']} {...panResponder.panHandlers}>
             <Animated.View
                 style={[styles.sidebarContainer, { transform: [{ translateX: slideAnim }] }]}
                 pointerEvents={isSidebarOpen ? 'auto' : 'none'}
@@ -130,7 +130,7 @@ export default function ChatScreen({ baseUrl, token, onLogout }) {
 
             <KeyboardAvoidingView
                 style={styles.main}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                behavior="padding"
             >
                 <View style={styles.header}>
                     <TouchableOpacity onPress={openSidebar} style={styles.menuButton}>
