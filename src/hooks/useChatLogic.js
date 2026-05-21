@@ -5,6 +5,7 @@ export const useChatLogic = (baseUrl, session) => {
     const [messages, setMessages] = useState([]);
     const [sessions, setSessions] = useState([]);
     const [sessionId, setSessionId] = useState('');
+    const [currentKing, setCurrentKing] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
@@ -21,18 +22,33 @@ export const useChatLogic = (baseUrl, session) => {
         }
     };
 
-    // 2. 새 대화 시작 (이 함수가 정의되어 있어야 합니다!)
-    const startNewChat = async () => {
+    // 2. 새 대화 시작 (king 필수)
+    const startNewChat = async (king) => {
+        if (!king) {
+            setError("대화할 인물을 선택해주세요.");
+            return;
+        }
+        // 이전 채팅 상태 즉시 초기화 (이전 메시지/타이핑 인디케이터 잔상 방지)
+        setMessages([]);
+        setSessionId('');
+        setCurrentKing(king);
         setLoading(true);
         try {
-            const res = await authFetch(`${baseUrl}/api/chats`, { method: 'POST' });
+            const res = await authFetch(`${baseUrl}/api/chats`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ king }),
+            });
             const data = await res.json();
             if (res.ok) {
                 setSessionId(data.chat_id);
-                setMessages([]);
                 fetchSessions();
+            } else {
+                setCurrentKing(null);
+                setError("새 대화를 시작하지 못했습니다.");
             }
         } catch (err) {
+            setCurrentKing(null);
             setError("새 대화를 시작하지 못했습니다.");
         } finally {
             setLoading(false);
@@ -66,13 +82,18 @@ export const useChatLogic = (baseUrl, session) => {
         }
     };
 
-    // 컴포넌트가 처음 뜰 때 실행
+    // 컴포넌트가 처음 뜰 때 실행: 대화 목록만 로드
+    // (새 대화 생성은 사용자가 왕을 선택해야 시작됨)
     useEffect(() => {
-        if(session) startNewChat();
+        if (session) fetchSessions();
     }, [session]);
 
     // 4. 특정 채팅 내역 불러오기
-    const loadChat = async (chatId) => {
+    const loadChat = async (chatId, king) => {
+        // 이전 채팅 상태 즉시 초기화 (이전 메시지/타이핑 인디케이터 잔상 방지)
+        setMessages([]);
+        setSessionId('');
+        setCurrentKing(king ?? null);
         setLoading(true);
         try {
             const res = await authFetch(`${baseUrl}/api/chats/${chatId}/messages`);
@@ -91,6 +112,14 @@ export const useChatLogic = (baseUrl, session) => {
         }
     };
 
+    // 5. "새 대화" — 인물 선택 화면으로 되돌림
+    const resetChat = () => {
+        setMessages([]);
+        setSessionId('');
+        setCurrentKing(null);
+        setError(null);
+    };
+
     // 마지막에 이 함수들을 모두 내보내야 ChatScreen에서 쓸 수 있습니다.
-    return { messages, sessions, sessionId, loading, error, clearError, startNewChat, sendMessage, fetchSessions, loadChat };
+    return { messages, sessions, sessionId, currentKing, loading, error, clearError, startNewChat, sendMessage, fetchSessions, loadChat, resetChat };
 };
