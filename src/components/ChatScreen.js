@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
     View, Text, FlatList, StyleSheet, Animated,
-    Dimensions, PanResponder, KeyboardAvoidingView, Platform, TouchableOpacity, Modal, Keyboard
+    Dimensions, PanResponder, KeyboardAvoidingView, Platform, TouchableOpacity, Modal, Keyboard, ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -47,35 +47,86 @@ import Sidebar from './Sidebar';
 import ChatInput from './ChatInput';
 import { MessageItem } from './MessageItem';
 import { useChatLogic } from '../hooks/useChatLogic';
+import { KINGS, getKingByKey } from '../constants/kings';
 
 const { width } = Dimensions.get('window');
 const SIDEBAR_WIDTH = width * 0.75;
 
-const IntroView = () => (
-    <View style={styles.introContainer}>
-        <View style={styles.logoBadge}>
-            <Text style={styles.logoBadgeText}>H</Text>
-        </View>
-        <Text style={styles.introTitle}>Histolog에 오신 것을 환영합니다</Text>
-        <Text style={styles.introDescription}>
-            조선시대의 인물들과 실시간으로 대화하며{"\n"}
-            기록 속에 숨겨진 생생한 역사를 체험해보세요.
-        </Text>
+const IntroView = ({ kingKey, sessionId, loading, onSelectKing }) => {
+    const activeKing = getKingByKey(kingKey);
 
-        <View style={styles.tipContainer}>
-            <Text style={styles.tipTitle}>💡 이렇게 질문해보세요</Text>
-            <Text style={styles.tipText}>"세종대왕님, 한글을 만드신 진짜 이유가 무엇인가요?"</Text>
-            <Text style={styles.tipText}>"이순신 장군님, 명량 해전 당시 심정은 어떠셨나요?"</Text>
+    // 인물을 골라 새 대화가 만들어진 상태 — 첫 질문을 유도
+    if (sessionId && activeKing) {
+        return (
+            <View style={styles.introContainer}>
+                <View style={[styles.readyAvatar, { backgroundColor: activeKing.color }]}>
+                    <Text style={styles.readyAvatarText}>{activeKing.name.charAt(0)}</Text>
+                </View>
+                <Text style={styles.introTitle}>{activeKing.name} 임금과 대화를 시작하세요</Text>
+                <Text style={styles.introDescription}>
+                    {activeKing.title} · {activeKing.description}
+                </Text>
+
+                <View style={styles.tipContainer}>
+                    <Text style={styles.tipTitle}>💡 이렇게 질문해보세요</Text>
+                    {activeKing.examples.map((ex, i) => (
+                        <Text key={i} style={styles.tipText}>"{ex}"</Text>
+                    ))}
+                </View>
+            </View>
+        );
+    }
+
+    // 인물 선택 화면
+    return (
+        <View style={styles.introContainer}>
+            <View style={styles.logoBadge}>
+                <Text style={styles.logoBadgeText}>H</Text>
+            </View>
+            <Text style={styles.introTitle}>대화할 인물을 선택하세요</Text>
+            <Text style={styles.introDescription}>
+                조선왕조실록 기록을 바탕으로{"\n"}
+                그 시대를 살아간 인물과 직접 대화합니다.
+            </Text>
+
+            <View style={styles.kingList}>
+                {KINGS.map((king) => {
+                    const isPending = loading && kingKey === king.key;
+                    return (
+                        <TouchableOpacity
+                            key={king.key}
+                            style={[styles.kingCard, loading && !isPending && styles.kingCardDimmed]}
+                            onPress={() => onSelectKing(king.key)}
+                            activeOpacity={0.8}
+                            disabled={loading}
+                        >
+                            <View style={[styles.kingAvatar, { backgroundColor: king.color }]}>
+                                <Text style={styles.kingAvatarText}>{king.name.charAt(0)}</Text>
+                            </View>
+                            <View style={styles.kingCardContent}>
+                                <Text style={styles.kingCardName}>{king.name}</Text>
+                                <Text style={styles.kingCardTitle}>{king.title}</Text>
+                                <Text style={styles.kingCardDesc}>{king.description}</Text>
+                            </View>
+                            {isPending
+                                ? <ActivityIndicator color="#8D6E63" style={{ marginLeft: 8 }} />
+                                : <Text style={styles.kingCardChevron}>›</Text>}
+                        </TouchableOpacity>
+                    );
+                })}
+            </View>
         </View>
-    </View>
-);
+    );
+};
 
 export default function ChatScreen({ baseUrl, token, onLogout }) {
-    const { messages, sessions, sessionId, loading, error, clearError, startNewChat, sendMessage, loadChat } = useChatLogic(baseUrl, token);
+    const { messages, sessions, sessionId, currentKing, loading, error, clearError, startNewChat, sendMessage, loadChat, resetChat } = useChatLogic(baseUrl, token);
     const [inputText, setInputText] = useState('');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const isSidebarOpenRef = useRef(false);
     const slideAnim = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
+
+    const activeKing = getKingByKey(currentKing);
 
     const openSidebar = () => {
         Keyboard.dismiss();
@@ -122,8 +173,8 @@ export default function ChatScreen({ baseUrl, token, onLogout }) {
             >
                 <Sidebar
                     sessions={sessions}
-                    onNewChat={() => { startNewChat(); closeSidebar(); }}
-                    onSessionPress={(id) => { loadChat(id); closeSidebar(); }}
+                    onNewChat={() => { closeSidebar(); resetChat(); }}
+                    onSessionPress={(id, king) => { loadChat(id, king); closeSidebar(); }}
                     onLogout={onLogout}
                     isOpen={isSidebarOpen}
                 />
@@ -137,7 +188,16 @@ export default function ChatScreen({ baseUrl, token, onLogout }) {
                     <TouchableOpacity onPress={openSidebar} style={styles.menuButton}>
                         <Text style={styles.menuIcon}>☰</Text>
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Histolog</Text>
+                    {activeKing ? (
+                        <View style={styles.headerKing}>
+                            <View style={[styles.headerKingAvatar, { backgroundColor: activeKing.color }]}>
+                                <Text style={styles.headerKingAvatarText}>{activeKing.name.charAt(0)}</Text>
+                            </View>
+                            <Text style={styles.headerTitle}>{activeKing.name}</Text>
+                        </View>
+                    ) : (
+                        <Text style={styles.headerTitle}>Histolog</Text>
+                    )}
                     <View style={{ width: 40 }} />
                 </View>
 
@@ -148,18 +208,27 @@ export default function ChatScreen({ baseUrl, token, onLogout }) {
                         keyExtractor={(_, i) => i.toString()}
                         renderItem={({ item }) => <MessageItem role={item.role} content={item.message} />}
                         contentContainerStyle={styles.chatList}
-                        ListFooterComponent={loading ? <TypingIndicator /> : null}
+                        ListFooterComponent={
+                            loading && messages[messages.length - 1]?.role === 'user'
+                                ? <TypingIndicator />
+                                : null
+                        }
                         keyboardShouldPersistTaps="handled"
                     />
                 ) : (
-                    <IntroView />
+                    <IntroView
+                        kingKey={currentKing}
+                        sessionId={sessionId}
+                        loading={loading}
+                        onSelectKing={startNewChat}
+                    />
                 )}
 
                 <ChatInput
                     value={inputText}
                     onChangeText={setInputText}
                     onSend={handleSend}
-                    disabled={loading}
+                    disabled={loading || !sessionId}
                 />
             </KeyboardAvoidingView>
 
@@ -220,6 +289,52 @@ const styles = StyleSheet.create({
     },
     tipTitle: { fontSize: 14, fontWeight: '700', color: '#5D4037', marginBottom: 10 },
     tipText: { fontSize: 13, color: '#8D6E63', marginBottom: 8, lineHeight: 18 },
+
+    kingList: { width: '100%', marginTop: 4 },
+    kingCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F0EBE3',
+        borderRadius: 12,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: '#E8DDD5',
+        marginBottom: 12,
+    },
+    kingCardDimmed: { opacity: 0.4 },
+    kingAvatar: {
+        width: 44,
+        height: 44,
+        borderRadius: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 14,
+    },
+    kingAvatarText: { fontSize: 20, fontWeight: '700', color: '#FFF' },
+    kingCardContent: { flex: 1 },
+    kingCardName: { fontSize: 17, fontWeight: '700', color: '#3E2723', marginBottom: 2 },
+    kingCardTitle: { fontSize: 12, color: '#8D6E63', marginBottom: 4 },
+    kingCardDesc: { fontSize: 13, color: '#5D4037', lineHeight: 18 },
+    kingCardChevron: { fontSize: 28, color: '#A1887F', marginLeft: 8 },
+    readyAvatar: {
+        width: 64,
+        height: 64,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    readyAvatarText: { fontSize: 30, fontWeight: 'bold', color: '#FFF' },
+    headerKing: { flexDirection: 'row', alignItems: 'center' },
+    headerKingAvatar: {
+        width: 26,
+        height: 26,
+        borderRadius: 7,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 8,
+    },
+    headerKingAvatarText: { fontSize: 13, fontWeight: '700', color: '#FFF' },
 
     modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
     modalBox: { width: '80%', backgroundColor: '#FFF', borderRadius: 16, padding: 24, alignItems: 'center' },

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { authFetch } from '../utils/authFetch';
+import { getKingByKey } from '../constants/kings';
 
 const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 const MAX_TOKEN = 10000;
@@ -37,17 +38,27 @@ const Sidebar = ({ sessions, onNewChat, onSessionPress, onLogout, isOpen }) => {
                 indicatorStyle="black"
                 data={sessions}
                 keyExtractor={(item) => item.chat_id ? item.chat_id.toString() : Math.random().toString()}
-                renderItem={({ item }) => (
-                    <TouchableOpacity
-                        style={styles.sessionItem}
-                        onPress={() => onSessionPress(item.chat_id)}
-                    >
-                        <Text style={styles.sessionTitle} numberOfLines={1}>
-                            {item.title || '지난 대화'}
-                        </Text>
-                        <Text style={styles.sessionDate}>{item.created_at}</Text>
-                    </TouchableOpacity>
-                )}
+                renderItem={({ item }) => {
+                    const king = getKingByKey(item.king);
+                    return (
+                        <TouchableOpacity
+                            style={styles.sessionItem}
+                            onPress={() => onSessionPress(item.chat_id, item.king)}
+                        >
+                            <Text style={styles.sessionTitle} numberOfLines={1}>
+                                {item.title || '지난 대화'}
+                            </Text>
+                            <View style={styles.sessionMeta}>
+                                {king && (
+                                    <Text style={[styles.sessionKing, { color: king.color }]}>
+                                        {king.name}
+                                    </Text>
+                                )}
+                                <Text style={styles.sessionDate}>{item.created_at}</Text>
+                            </View>
+                        </TouchableOpacity>
+                    );
+                }}
                 ListEmptyComponent={<Text style={styles.emptyText}>진행 중인 대화가 없습니다.</Text>}
             />
 
@@ -84,7 +95,9 @@ const styles = StyleSheet.create({
     newBtnText: { color: '#5D4037', fontWeight: '600' },
     sessionItem: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#EEE' },
     sessionTitle: { fontSize: 14, color: '#444', fontWeight: '500' },
-    sessionDate: { fontSize: 10, color: '#999', marginTop: 4 },
+    sessionMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+    sessionKing: { fontSize: 10, fontWeight: '700', marginRight: 6 },
+    sessionDate: { fontSize: 10, color: '#999' },
     emptyText: { textAlign: 'center', marginTop: 20, color: '#999', fontSize: 13 },
     usageContainer: { marginTop: 16, marginBottom: 12 },
     usageHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
